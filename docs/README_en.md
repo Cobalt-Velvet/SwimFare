@@ -25,8 +25,13 @@ SwimFare aligns the comparison on **days remaining**. By collecting prices obser
 - Price trend charts
 - Japanese / Korean switching (automatic browser-language detection + manual toggle)
 - Light / dark theme switching (automatic system detection + manual toggle)
+- Korea-origin / Japan-origin direction switching (toggle with slide animation)
 
 ## Tracked Routes
+
+Six representative routes are tracked in both directions, Korea-origin and Japan-origin (12 routes total).
+
+**Korea → Japan**
 
 | From | To | Code |
 |------|------|--------|
@@ -36,6 +41,17 @@ SwimFare aligns the comparison on **days remaining**. By collecting prices obser
 | Busan | Tokyo | PUS-NRT |
 | Busan | Osaka | PUS-KIX |
 | Busan | Fukuoka | PUS-FUK |
+
+**Japan → Korea**
+
+| From | To | Code |
+|------|------|--------|
+| Tokyo | Seoul | NRT-ICN |
+| Osaka | Seoul | KIX-ICN |
+| Fukuoka | Seoul | FUK-ICN |
+| Tokyo | Busan | NRT-PUS |
+| Osaka | Busan | KIX-PUS |
+| Fukuoka | Busan | FUK-PUS |
 
 ## Tech Stack
 
@@ -53,7 +69,7 @@ SwimFare aligns the comparison on **days remaining**. By collecting prices obser
 
 ```mermaid
 flowchart TD
-    Cron["Cron Triggers<br/>once daily (JST 12:00)"] --> Worker["Cloudflare Workers (Hono)"]
+    Cron["Cron Triggers (daily, JST 12:00)"] --> Worker["Cloudflare Workers / Hono"]
     Worker -->|"fetch price → normalize to JPY"| TP["Travelpayouts API"]
     TP --> Worker
     Worker -->|"store route / days-before / price"| D1[("D1 / SQLite")]

@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
 import type { Locale, ThemePref } from './strings';
+import type { Direction } from '../lib/routes';
 
 const SUPPORTED: readonly Locale[] = ['ja', 'ko'] as const;
 
@@ -32,6 +33,12 @@ export function detectTheme(c: Context): ThemePref {
   const cookie = getCookie(c, 'theme');
   if (cookie === 'light' || cookie === 'dark') return cookie;
   return null;
+}
+
+export function detectDirection(c: Context): Direction {
+  const cookie = getCookie(c, 'direction');
+  if (cookie === 'kr-to-jp' || cookie === 'jp-to-kr') return cookie;
+  return 'kr-to-jp';
 }
 
 export { SUPPORTED };

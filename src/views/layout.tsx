@@ -184,6 +184,57 @@ main { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem; }
 .back-link { color: var(--link); text-decoration: none; font-size: 0.9rem; }
 .back-link:hover { text-decoration: underline; }
 
+.direction-toggle {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0.5rem auto 1.25rem;
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 5px;
+  box-shadow: var(--card-shadow);
+  width: fit-content;
+}
+.direction-toggle button {
+  font: inherit;
+  font-size: 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.6rem 1.4rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.direction-toggle button:hover { color: var(--text); }
+.direction-toggle button.active {
+  background: var(--link);
+  color: var(--header-text);
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: reduce) {
+  .direction-toggle button { transition: none; }
+}
+
+.directions-wrap {
+  overflow: hidden;
+  /* スライドが上下の他要素と干渉しないように高さは中身で決まる */
+}
+.directions-track {
+  display: flex;
+  width: 200%;
+  transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.directions-wrap[data-direction="kr-to-jp"] .directions-track { transform: translateX(0%); }
+.directions-wrap[data-direction="jp-to-kr"] .directions-track { transform: translateX(-50%); }
+.direction-pane {
+  flex: 0 0 50%;
+  width: 50%;
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .directions-track { transition: none; }
+}
+
 .route-card {
   background: var(--surface);
   border-radius: 12px;

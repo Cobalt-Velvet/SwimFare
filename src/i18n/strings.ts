@@ -32,6 +32,11 @@ export type Strings = {
   themeLight: string;
   themeDark: string;
   themeAuto: string;
+  direction: {
+    label: string;
+    krToJp: string;
+    jpToKr: string;
+  };
 };
 
 export const STRINGS: Record<Locale, Strings> = {
@@ -89,6 +94,11 @@ export const STRINGS: Record<Locale, Strings> = {
     themeLight: 'ライト',
     themeDark: 'ダーク',
     themeAuto: '自動',
+    direction: {
+      label: '方向',
+      krToJp: '韓国 → 日本',
+      jpToKr: '日本 → 韓国',
+    },
   },
   ko: {
     catchphrase: '이 가격이면 수영해서 갈란다...',
@@ -144,6 +154,11 @@ export const STRINGS: Record<Locale, Strings> = {
     themeLight: '라이트',
     themeDark: '다크',
     themeAuto: '자동',
+    direction: {
+      label: '방향',
+      krToJp: '한국 → 일본',
+      jpToKr: '일본 → 한국',
+    },
   },
 };
 

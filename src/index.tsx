@@ -2,8 +2,14 @@ import { Hono } from 'hono';
 import { setCookie, deleteCookie } from 'hono/cookie';
 import { collectPrices } from './lib/collector';
 import { getRoutePayload, getRouteHistory } from './lib/store';
-import { TRACKED_ROUTES, isTrackedRoute } from './lib/routes';
-import { detectLocale, detectTheme } from './i18n/locale';
+import {
+  KOREA_TO_JAPAN,
+  JAPAN_TO_KOREA,
+  isTrackedRoute,
+  routeDirection,
+  type Direction,
+} from './lib/routes';
+import { detectLocale, detectTheme, detectDirection } from './i18n/locale';
 import type { Locale, ThemePref } from './i18n/strings';
 import { Layout } from './views/layout';
 import { Home } from './views/home';
@@ -20,6 +26,7 @@ export type Bindings = {
 export type Variables = {
   locale: Locale;
   theme: ThemePref;
+  direction: Direction;
 };
 
 export type AdConfig = { client: string; slot: string };
@@ -35,7 +42,7 @@ const COOKIE_OPTS = { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'Lax' } a
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// Locale / theme の URL パラメータを cookie に保存し、param 無しで再描画させる。
+// URL パラメータ経由のトグル → cookie 化 → param 無し URL に redirect。
 app.use('*', async (c, next) => {
   const lang = c.req.query('lang');
   if (lang === 'ja' || lang === 'ko') {
@@ -51,9 +58,15 @@ app.use('*', async (c, next) => {
     deleteCookie(c, 'theme', { path: '/' });
     return c.redirect(c.req.path);
   }
+  const direction = c.req.query('direction');
+  if (direction === 'kr-to-jp' || direction === 'jp-to-kr') {
+    setCookie(c, 'direction', direction, COOKIE_OPTS);
+    return c.redirect(c.req.path);
+  }
 
   c.set('locale', detectLocale(c));
   c.set('theme', detectTheme(c));
+  c.set('direction', detectDirection(c));
   await next();
 });
 
@@ -62,14 +75,21 @@ app.use('*', Layout);
 app.get('/', async (c) => {
   const locale = c.get('locale');
   const theme = c.get('theme');
-  const routes = await Promise.all(TRACKED_ROUTES.map((r) => getRoutePayload(c.env, r)));
-  return c.render(<Home routes={routes} locale={locale} />, {
-    title: 'SwimFare',
-    ads: adConfig(c.env),
-    locale,
-    theme,
-    path: c.req.path,
-  });
+  const direction = c.get('direction');
+  const [krRoutes, jpRoutes] = await Promise.all([
+    Promise.all(KOREA_TO_JAPAN.map((r) => getRoutePayload(c.env, r))),
+    Promise.all(JAPAN_TO_KOREA.map((r) => getRoutePayload(c.env, r))),
+  ]);
+  return c.render(
+    <Home krRoutes={krRoutes} jpRoutes={jpRoutes} locale={locale} direction={direction} />,
+    {
+      title: 'SwimFare',
+      ads: adConfig(c.env),
+      locale,
+      theme,
+      path: c.req.path,
+    },
+  );
 });
 
 app.get('/routes/:route', async (c) => {
@@ -77,6 +97,9 @@ app.get('/routes/:route', async (c) => {
   if (!isTrackedRoute(route)) return c.notFound();
   const locale = c.get('locale');
   const theme = c.get('theme');
+  // ルートのプレフィックスから方向を推定し、cookie を更新。
+  // → 戻ったときホームが同じ方向で開く。
+  setCookie(c, 'direction', routeDirection(route), COOKIE_OPTS);
   const [data, history] = await Promise.all([
     getRoutePayload(c.env, route),
     getRouteHistory(c.env, route),
