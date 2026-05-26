@@ -6,7 +6,9 @@
 過去に蓄積した同条件の価格と比較し、今日の価格が割安か割高かを一目で確認できます。
 
 > [!NOTE]
-> 本リポジトリは開発中です。デモのデータは Amadeus のテスト環境を使用しているため、表示価格は実際の市場価格と一致しない場合があります。
+> 本リポジトリは開発中です。価格データは Travelpayouts（Aviasales Data API）のキャッシュ由来のため、表示価格は実際の市場価格と完全には一致しない場合があります。
+>
+> また、シードスクリプトはデモ画面の安定と判定分布のバランス確認のため、各路線の「今日の観測」も含めて生成します。`INSERT OR REPLACE` を使うため、ローカルで `npm run seed:local` を実行した時点では cron が取得した当日の実データを意図的に上書きします（割安／割高／通常の分布を見せ、glow の挙動を確認するため）。実運用（cron のみ・seed なし）では Travelpayouts の実データがそのまま表示され、検索量が少ない路線ではキャッシュが空になることがあります。
 
 ## なぜ作ったか
 
@@ -32,17 +34,17 @@ SwimFare は比較の基準を **残り日数** に揃えます。
 | データベース | Cloudflare D1 (SQLite) |
 | キャッシュ | Cloudflare KV / Cache API |
 | バッチ処理 | Cloudflare Cron Triggers |
-| 外部API | [Amadeus for Developers](https://developers.amadeus.com/) (Self-Service) |
+| 外部API | [Travelpayouts](https://www.travelpayouts.com/) / Aviasales Data API |
 
 ## アーキテクチャ
 
 ```
                  ┌──────────────────┐
-   Cron Triggers │  毎日1回 価格収集  　│
+   Cron Triggers │  毎日1回 価格収集  │
    ─────────────▶│  (Workers)       │
                  └────────┬─────────┘
-                          │ Amadeus API 呼び出し
-                          │ (トークンは KV にキャッシュ)
+                          │ Travelpayouts API 呼び出し
+                          │ (価格を JPY に変換)
                           ▼
                  ┌──────────────────┐
                  │   D1 (SQLite)    │  路線・残り日数・価格を蓄積
@@ -51,12 +53,13 @@ SwimFare は比較の基準を **残り日数** に揃えます。
    ユーザー ──▶ Hono ──────┤ 同一残り日数の平均と比較
                           ▼
                  ┌──────────────────┐
-                 │  判定 + グラフ表示  　│
+                 │  判定 + グラフ表示  │
                  └──────────────────┘
 ```
 
-- Amadeus の OAuth トークンは約30分で失効するため、KV にキャッシュして失効前に再取得します。
-- API レスポンスもキャッシュし、無料枠の消費を抑えつつ応答速度を確保します。
+- Travelpayouts はトークン認証（`X-Access-Token`）で、Amadeus のような短時間でのトークン失効はありません。
+- 価格はルーブル建てで返ることがあるため、保存前に JPY へ統一します。
+- API レスポンスはキャッシュし、応答速度を確保します。
 
 ## データモデル（概要）
 
@@ -90,17 +93,20 @@ npm run deploy
 
 ### 必要な環境変数
 
-| 変数名 | 内容 |
-|--------|------|
-| `AMADEUS_CLIENT_ID` | Amadeus API のクライアントID |
-| `AMADEUS_CLIENT_SECRET` | Amadeus API のクライアントシークレット |
+| 変数名 | 必須 | 内容 |
+|--------|------|------|
+| `TRAVELPAYOUTS_TOKEN` | ✓ | Travelpayouts の API トークン |
+| `ADSENSE_CLIENT_ID` | 任意 | Google AdSense Publisher ID（例：`ca-pub-XXXXXXXXXXXXXXXX`） |
+| `ADSENSE_SLOT_ID` | 任意 | バナーの広告ユニット ID |
 
 `.dev.vars` に記載するか、`wrangler secret put` で設定します。
 
+`ADSENSE_CLIENT_ID` と `ADSENSE_SLOT_ID` の両方が設定されると、本物の AdSense タグが描画されます。未設定（空文字）なら静的なプレースホルダがバナー枠に表示されます。`wrangler.toml` 側でも `[vars]` に空文字で宣言してあるので、`.dev.vars`（ローカル）か `wrangler secret put`（本番）で値を上書きしてください。
+
 ## 今後の予定
 
-- [ ] Amadeus API 連携（トークンキャッシュ込み）
-- [ ] D1 スキーマとマイグレーション
+- [x] D1 スキーマとマイグレーション
+- [ ] Travelpayouts 連携（トークン認証、JPYへの変換込み）
 - [ ] Cron Triggers による価格収集バッチ
 - [ ] 割安／割高の判定ロジック
 - [ ] フロントエンド（価格推移グラフ）

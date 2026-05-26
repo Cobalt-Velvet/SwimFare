@@ -1,0 +1,28 @@
+name = "swimfare"
+main = "src/index.tsx"
+compatibility_date = "2026-05-25"
+
+# 1日1回の価格収集バッチ（UTC 03:00 = JST 12:00）。ステップ4で実装する。
+[triggers]
+crons = ["0 3 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "swimfare-db"
+database_id = "368eb1ea-0177-4fb0-92d8-02db5cf4e865"
+migrations_dir = "migrations"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "e0c78cbcafe54c53aa20c5abbfc4a44f"
+
+# Travelpayouts トークンは wrangler secret put で登録する（コミット禁止）：
+#   wrangler secret put TRAVELPAYOUTS_TOKEN
+# ローカル開発では .dev.vars に記載する。
+
+# Google AdSense（任意）。両方を設定すると本物の広告タグが描画される。
+# 未設定（空文字のまま）なら静的プレースホルダにフォールバック。
+# ローカル開発では .dev.vars、本番では `wrangler secret put` で値を上書きする。
+[vars]
+ADSENSE_CLIENT_ID = ""
+ADSENSE_SLOT_ID   = ""

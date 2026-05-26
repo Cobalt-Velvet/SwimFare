@@ -1,0 +1,50 @@
+export const MIN_SAMPLES = 5;
+export const CHEAP_THRESHOLD = -0.05;
+export const EXPENSIVE_THRESHOLD = 0.05;
+
+export type Verdict = 'cheap' | 'normal' | 'expensive' | 'insufficient_data';
+
+export type Judgment =
+  | {
+      verdict: 'insufficient_data';
+      sample_count: number;
+      required: number;
+    }
+  | {
+      verdict: 'cheap' | 'normal' | 'expensive';
+      sample_count: number;
+      avg_price: number;
+      deviation_pct: number;
+    };
+
+export async function judge(
+  db: D1Database,
+  route: string,
+  days_before: number,
+  current_price: number,
+  observed_date: string,
+): Promise<Judgment> {
+  const { results } = await db
+    .prepare(
+      `SELECT price FROM prices
+         WHERE route = ?1 AND days_before = ?2 AND observed_date < ?3`,
+    )
+    .bind(route, days_before, observed_date)
+    .all<{ price: number }>();
+
+  const sample_count = results.length;
+  if (sample_count < MIN_SAMPLES) {
+    return { verdict: 'insufficient_data', sample_count, required: MIN_SAMPLES };
+  }
+
+  const avg_price = results.reduce((sum, r) => sum + r.price, 0) / sample_count;
+  const deviation = (current_price - avg_price) / avg_price;
+  const deviation_pct = Math.round(deviation * 1000) / 10;
+
+  let verdict: 'cheap' | 'normal' | 'expensive';
+  if (deviation < CHEAP_THRESHOLD) verdict = 'cheap';
+  else if (deviation > EXPENSIVE_THRESHOLD) verdict = 'expensive';
+  else verdict = 'normal';
+
+  return { verdict, sample_count, avg_price: Math.round(avg_price), deviation_pct };
+}
