@@ -8,7 +8,7 @@
     "typecheck": "tsc --noEmit",
     "seed:gen": "node scripts/seed.mjs",
     "seed:local": "npm run seed:gen && wrangler d1 execute swimfare-db --local --file=scripts/seed.sql",
-    "seed:remote": "npm run seed:gen && wrangler d1 execute swimfare-db --remote --file=scripts/seed.sql"
+    "seed:remote": "node scripts/seed-remote-confirm.mjs && npm run seed:gen && wrangler d1 execute swimfare-db --remote --file=scripts/seed.sql"
   },
   "dependencies": {
     "hono": "^4.6.0"

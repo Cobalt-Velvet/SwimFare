@@ -1,3 +1,5 @@
+import { todayUtc } from './util';
+
 export type PriceObservation = {
   route: string;
   departure_date: string;
@@ -61,12 +63,17 @@ export async function fetchCheapestPrices(
   });
 
   if (!res.ok) {
-    throw new Error(`Travelpayouts ${res.status}: ${await res.text()}`);
+    // 上流本文はトークン等を含む恐れがあるので貼らない。ステータスと路線のみ。
+    throw new Error(
+      `Travelpayouts HTTP ${res.status} ${res.statusText || ''} (${origin}-${destination})`.trim(),
+    );
   }
 
   const body = (await res.json()) as ApiResponse;
   if (!body.success) {
-    throw new Error(`Travelpayouts error: ${body.error ?? 'unknown'}`);
+    // body.error はパース済みのコードを期待しているが、念のため短く切る。
+    const reason = String(body.error ?? 'unknown').slice(0, 80);
+    throw new Error(`Travelpayouts rejected (${origin}-${destination}): ${reason}`);
   }
 
   // 保存はJPYに統一する制約があるため、明示的に検証する。
@@ -89,10 +96,6 @@ export async function fetchCheapestPrices(
       airline: offer.airline ?? null,
     };
   });
-}
-
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function daysBetween(from: string, to: string): number {

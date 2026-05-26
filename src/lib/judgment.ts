@@ -2,8 +2,6 @@ export const MIN_SAMPLES = 5;
 export const CHEAP_THRESHOLD = -0.05;
 export const EXPENSIVE_THRESHOLD = 0.05;
 
-export type Verdict = 'cheap' | 'normal' | 'expensive' | 'insufficient_data';
-
 export type Judgment =
   | {
       verdict: 'insufficient_data';
@@ -24,13 +22,23 @@ export async function judge(
   current_price: number,
   observed_date: string,
 ): Promise<Judgment> {
-  const { results } = await db
-    .prepare(
-      `SELECT price FROM prices
-         WHERE route = ?1 AND days_before = ?2 AND observed_date < ?3`,
-    )
-    .bind(route, days_before, observed_date)
-    .all<{ price: number }>();
+  let results: { price: number }[];
+  try {
+    const r = await db
+      .prepare(
+        `SELECT price FROM prices
+           WHERE route = ?1 AND days_before = ?2 AND observed_date < ?3`,
+      )
+      .bind(route, days_before, observed_date)
+      .all<{ price: number }>();
+    results = r.results;
+  } catch (e) {
+    // D1 が落ちても判定だけ「収集中」に倒して全体は壊さない。
+    console.warn(
+      `[judge] D1 read failed for ${route} d_b=${days_before}: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    return { verdict: 'insufficient_data', sample_count: 0, required: MIN_SAMPLES };
+  }
 
   const sample_count = results.length;
   if (sample_count < MIN_SAMPLES) {

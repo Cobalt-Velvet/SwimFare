@@ -1,5 +1,6 @@
 import { fetchCheapestPrices, type PriceObservation } from './travelpayouts';
 import { TRACKED_ROUTES } from './routes';
+import { todayUtc } from './util';
 
 const WEEKS_AHEAD = 4;
 
@@ -75,10 +76,6 @@ async function persist(db: D1Database, observations: PriceObservation[]) {
       ),
     ),
   );
-}
-
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function upcomingSaturdays(from: string, count: number): string[] {

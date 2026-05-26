@@ -1,4 +1,4 @@
-export const KOREA_AIRPORTS = ['ICN', 'GMP', 'PUS'] as const;
+export const KOREA_AIRPORTS = ['ICN', 'PUS'] as const;
 export const JAPAN_AIRPORTS = ['NRT', 'HND', 'KIX', 'FUK'] as const;
 
 export const KOREA_TO_JAPAN = [

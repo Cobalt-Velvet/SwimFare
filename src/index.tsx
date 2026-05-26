@@ -29,7 +29,7 @@ export type Variables = {
   direction: Direction;
 };
 
-export type AdConfig = { client: string; slot: string };
+type AdConfig = { client: string; slot: string };
 
 function adConfig(env: Bindings): AdConfig | null {
   if (env.ADSENSE_CLIENT_ID && env.ADSENSE_SLOT_ID) {
@@ -73,6 +73,8 @@ app.use('*', async (c, next) => {
 app.use('*', Layout);
 
 app.get('/', async (c) => {
+  // cookie で言語/テーマ/方向が変わるので中間キャッシュに「Cookie 別物扱い」を伝える。
+  c.header('Vary', 'Cookie');
   const locale = c.get('locale');
   const theme = c.get('theme');
   const direction = c.get('direction');
@@ -95,6 +97,7 @@ app.get('/', async (c) => {
 app.get('/routes/:route', async (c) => {
   const route = c.req.param('route');
   if (!isTrackedRoute(route)) return c.notFound();
+  c.header('Vary', 'Cookie');
   const locale = c.get('locale');
   const theme = c.get('theme');
   // ルートのプレフィックスから方向を推定し、cookie を更新。
@@ -126,17 +129,6 @@ app.get('/api/routes/:route/history', async (c) => {
   const route = c.req.param('route');
   if (!isTrackedRoute(route)) return c.notFound();
   return c.json(await getRouteHistory(c.env, route));
-});
-
-// 本番では scheduled を HTTP から直接叩く方法がないため、collector を同期実行できる管理エンドポイントを置く。
-// 認証は Bearer + TRAVELPAYOUTS_TOKEN（既存の唯一のシークレット）を流用する。
-app.post('/admin/run-cron', async (c) => {
-  const auth = c.req.header('authorization');
-  if (!auth || auth !== `Bearer ${c.env.TRAVELPAYOUTS_TOKEN}`) {
-    return c.text('Forbidden', 403);
-  }
-  const result = await collectPrices(c.env);
-  return c.json(result);
 });
 
 export default {

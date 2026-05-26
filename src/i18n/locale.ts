@@ -3,8 +3,6 @@ import { getCookie } from 'hono/cookie';
 import type { Locale, ThemePref } from './strings';
 import type { Direction } from '../lib/routes';
 
-const SUPPORTED: readonly Locale[] = ['ja', 'ko'] as const;
-
 function isLocale(v: unknown): v is Locale {
   return v === 'ja' || v === 'ko';
 }
@@ -40,5 +38,3 @@ export function detectDirection(c: Context): Direction {
   if (cookie === 'kr-to-jp' || cookie === 'jp-to-kr') return cookie;
   return 'kr-to-jp';
 }
-
-export { SUPPORTED };

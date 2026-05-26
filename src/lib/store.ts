@@ -1,4 +1,5 @@
 import { judge, type Judgment } from './judgment';
+import { todayUtc } from './util';
 
 export type Departure = {
   departure_date: string;
@@ -26,6 +27,14 @@ export type StoreEnv = { DB: D1Database; CACHE: KVNamespace };
 const CACHE_TTL_SECONDS = 3600;
 const CACHE_VERSION = 'v4';
 
+type TodayRow = {
+  departure_date: string;
+  days_before: number;
+  price: number;
+  currency: string;
+  airline: string | null;
+};
+
 export async function getRoutePayload(env: StoreEnv, route: string): Promise<RoutePayload> {
   const observed_date = todayUtc();
   const cacheKey = `route:${CACHE_VERSION}:${route}:${observed_date}`;
@@ -33,20 +42,25 @@ export async function getRoutePayload(env: StoreEnv, route: string): Promise<Rou
   const cached = await env.CACHE.get(cacheKey);
   if (cached) return JSON.parse(cached) as RoutePayload;
 
-  const { results: today } = await env.DB.prepare(
-    `SELECT departure_date, days_before, price, currency, airline
-       FROM prices
-       WHERE route = ?1 AND observed_date = ?2
-       ORDER BY departure_date`,
-  )
-    .bind(route, observed_date)
-    .all<{
-      departure_date: string;
-      days_before: number;
-      price: number;
-      currency: string;
-      airline: string | null;
-    }>();
+  let today: TodayRow[];
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT departure_date, days_before, price, currency, airline
+         FROM prices
+         WHERE route = ?1 AND observed_date = ?2
+         ORDER BY departure_date`,
+    )
+      .bind(route, observed_date)
+      .all<TodayRow>();
+    today = results;
+  } catch (e) {
+    // D1 が落ちた路線は空の departures で返し、他路線は通常通り描画する。
+    // 空 payload は障害復旧後すぐ反映できるよう KV にキャッシュしない。
+    console.warn(
+      `[store] getRoutePayload D1 read failed for ${route}: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    return { route, observed_date, departures: [] };
+  }
 
   const departures = await Promise.all(
     today.map(async (t) => ({
@@ -72,19 +86,29 @@ export async function getRouteHistory(
   const cached = await env.CACHE.get(cacheKey);
   if (cached) return JSON.parse(cached) as HistoryPoint[];
 
-  const { results } = await env.DB.prepare(
-    `SELECT days_before,
-            AVG(price) AS avg_price,
-            COUNT(*)   AS sample_count
-       FROM prices
-       WHERE route = ?1 AND observed_date >= ?2 AND observed_date < ?3
-       GROUP BY days_before
-       ORDER BY days_before`,
-  )
-    .bind(route, since, observed_date)
-    .all<{ days_before: number; avg_price: number; sample_count: number }>();
+  let raw: { days_before: number; avg_price: number; sample_count: number }[];
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT days_before,
+              AVG(price) AS avg_price,
+              COUNT(*)   AS sample_count
+         FROM prices
+         WHERE route = ?1 AND observed_date >= ?2 AND observed_date < ?3
+         GROUP BY days_before
+         ORDER BY days_before`,
+    )
+      .bind(route, since, observed_date)
+      .all<{ days_before: number; avg_price: number; sample_count: number }>();
+    raw = results;
+  } catch (e) {
+    // 空配列で返すと RouteDetail がチャート無しの「データ不足」表示に倒れる。
+    console.warn(
+      `[store] getRouteHistory D1 read failed for ${route}: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    return [];
+  }
 
-  const history = results.map((r) => ({
+  const history = raw.map((r) => ({
     days_before: r.days_before,
     avg_price: Math.round(r.avg_price),
     sample_count: r.sample_count,
@@ -92,10 +116,6 @@ export async function getRouteHistory(
 
   await env.CACHE.put(cacheKey, JSON.stringify(history), { expirationTtl: CACHE_TTL_SECONDS });
   return history;
-}
-
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function subtractDays(yyyymmdd: string, days: number): string {

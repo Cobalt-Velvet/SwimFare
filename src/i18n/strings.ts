@@ -88,6 +88,8 @@ export const STRINGS: Record<Locale, Strings> = {
       MM: 'ピーチ・アビエーション',
       GK: 'ジェットスター・ジャパン',
       JJ: 'スプリング・ジャパン',
+      ZG: 'ジップエア',
+      RF: 'エアロK航空'
     },
     langLabel: '言語',
     themeLabel: 'テーマ',
@@ -148,6 +150,8 @@ export const STRINGS: Record<Locale, Strings> = {
       MM: '피치항공',
       GK: '젯스타 재팬',
       JJ: '스프링재팬',
+      ZG: '집에어',
+      RF: '에어로케이항공'
     },
     langLabel: '언어',
     themeLabel: '테마',

@@ -126,6 +126,22 @@ npm run deploy
 
 ローカルでは `.dev.vars` に記載し、本番では `wrangler secret put` で登録します。AdSense は未設定の場合プレースホルダを表示します。
 
+### シードデータの注入
+
+```bash
+npm run seed:local    # ローカル D1 にデモ用の合成データを投入
+```
+
+`npm run seed:remote` は **本番の当日 cron データを上書き** するため、明示的に環境変数を立てない限り拒否します：
+
+```bash
+# bash
+SEED_REMOTE_CONFIRM=yes npm run seed:remote
+
+# PowerShell
+$env:SEED_REMOTE_CONFIRM='yes'; npm run seed:remote
+```
+
 ## 今後の改善案
 
 - 季節・曜日・連休などの要因を考慮した、より精緻な判定
