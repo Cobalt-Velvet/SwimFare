@@ -1,6 +1,11 @@
 export const MIN_SAMPLES = 5;
 export const CHEAP_THRESHOLD = -0.05;
 export const EXPENSIVE_THRESHOLD = 0.05;
+// 平均を取る days_before の許容窓（±日）。
+// cron は毎日「次の4つの土曜」を収集するため days_before が毎日1ずつシフトし、
+// 完全一致では同じ値が週1回しか溜まらない（5サンプルに約5週かかる）。
+// ±3日の窓でブッキングカーブ上の近い点をプールし、サンプルを日次で増やす。
+export const DAYS_BEFORE_WINDOW = 3;
 
 export type Judgment =
   | {
@@ -27,9 +32,11 @@ export async function judge(
     const r = await db
       .prepare(
         `SELECT price FROM prices
-           WHERE route = ?1 AND days_before = ?2 AND observed_date < ?3`,
+           WHERE route = ?1
+             AND days_before BETWEEN ?2 AND ?3
+             AND observed_date < ?4`,
       )
-      .bind(route, days_before, observed_date)
+      .bind(route, days_before - DAYS_BEFORE_WINDOW, days_before + DAYS_BEFORE_WINDOW, observed_date)
       .all<{ price: number }>();
     results = r.results;
   } catch (e) {

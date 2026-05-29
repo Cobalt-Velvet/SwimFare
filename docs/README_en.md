@@ -20,7 +20,7 @@ SwimFare aligns the comparison on **days remaining**. By collecting prices obser
 
 - Automatically collects weekend flights for 6 major Korea–Japan routes every day
 - Stores data as a time series of "route, days-before, price"
-- Compares today's price against the average of the same route and same days-before to judge cheap / expensive
+- Compares today's price against the average of past prices for the same route within ±3 days of the same days-before to judge cheap / expensive
 - Highlights routes containing a clearly cheap flight (10%+ below average) with a pink gradient
 - Price trend charts
 - Japanese / Korean switching (automatic browser-language detection + manual toggle)
@@ -74,7 +74,7 @@ flowchart TD
     TP --> Worker
     Worker -->|"store route / days-before / price"| D1[("D1 / SQLite")]
     User["User"] --> Worker
-    D1 -->|"compare with same-days-before average"| Judge["cheap / expensive verdict"]
+    D1 -->|"compare with near-days-before (±3d) average"| Judge["cheap / expensive verdict"]
     Judge --> View["render via SSR + Chart.js"]
     KV[("KV cache")] -.-> Worker
 ```
@@ -95,7 +95,9 @@ Each price record is managed on two axes: the **departure date** (when you fly) 
 | `price` | Lowest price (JPY) |
 | `airline` | Airline (IATA code) |
 
-The verdict averages records with the same `route` and `days_before`, then compares against today's price. Today's own record is excluded from the average, avoiding the effect of a high current price inflating the mean when data is still sparse.
+The verdict averages records for the same `route` within a **±3-day window** around today's `days_before`, then compares against today's price. Today's own record is excluded from the average, avoiding the effect of a high current price inflating the mean when data is still sparse.
+
+> The window exists because the cron collects "the next four Saturdays" every day, so `days_before` shifts by one daily; with exact matching, a given value would only accumulate once per week. The ±3-day window pools observations with a similar number of days remaining so samples build up daily.
 
 ## A Note on Data
 
