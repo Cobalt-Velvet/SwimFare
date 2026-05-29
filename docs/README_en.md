@@ -1,6 +1,6 @@
 # SwimFare 🏊
 
-> At this price, I'd swim there.
+> Nah, for that price? I'm swimming.
 
 A web service that tells you whether today's price for a Korea–Japan weekend flight is cheap or expensive, by comparing it against past prices based on **days remaining until departure**.
 
