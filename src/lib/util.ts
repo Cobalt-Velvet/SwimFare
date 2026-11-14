@@ -6,3 +6,10 @@
 export function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
 }
+
+/** YYYY-MM-DD から days 日前の YYYY-MM-DD を返す。 */
+export function subtractDays(yyyymmdd: string, days: number): string {
+  const d = new Date(`${yyyymmdd}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}

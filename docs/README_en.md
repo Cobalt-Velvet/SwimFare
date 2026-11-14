@@ -20,8 +20,8 @@ SwimFare aligns the comparison on **days remaining**. By collecting prices obser
 
 - Automatically collects weekend flights for 6 major Korea–Japan routes every day
 - Stores data as a time series of "route, days-before, price"
-- Compares today's price against the average of past prices for the same route within ±3 days of the same days-before to judge cheap / expensive
-- Highlights routes containing a clearly cheap flight (10%+ below average) with a pink gradient
+- Compares today's price against the average of the last 30 days of prices for the same route within ±3 days of the same days-before to judge cheap / expensive
+- Highlights routes containing a clearly cheap flight (30%+ below average) with a pink gradient
 - Price trend charts
 - Japanese / Korean switching (automatic browser-language detection + manual toggle)
 - Light / dark theme switching (automatic system detection + manual toggle)
@@ -95,9 +95,11 @@ Each price record is managed on two axes: the **departure date** (when you fly) 
 | `price` | Lowest price (JPY) |
 | `airline` | Airline (IATA code) |
 
-The verdict averages records for the same `route` within a **±3-day window** around today's `days_before`, then compares against today's price. Today's own record is excluded from the average, avoiding the effect of a high current price inflating the mean when data is still sparse.
+The verdict averages records from the last 30 days for the same `route` within a **±3-day window** around today's `days_before`, then compares against today's price. Today's own record is excluded from the average, avoiding the effect of a high current price inflating the mean when data is still sparse.
 
 > The window exists because the cron collects "the next four Saturdays" every day, so `days_before` shifts by one daily; with exact matching, a given value would only accumulate once per week. The ±3-day window pools observations with a similar number of days remaining so samples build up daily.
+
+> The baseline is limited to the last 30 days because, without a time limit, seasonal shifts in price level (such as cheap summer fares) stay in the average and push verdicts toward "expensive". This also matches the chart, which uses the 30-day average.
 
 ## A Note on Data
 

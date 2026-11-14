@@ -1,5 +1,5 @@
-import { judge, type Judgment } from './judgment';
-import { todayUtc } from './util';
+import { judge, BASELINE_DAYS, type Judgment } from './judgment';
+import { subtractDays, todayUtc } from './util';
 
 export type Departure = {
   departure_date: string;
@@ -25,7 +25,7 @@ export type HistoryPoint = {
 export type StoreEnv = { DB: D1Database; CACHE: KVNamespace };
 
 const CACHE_TTL_SECONDS = 3600;
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v6';
 
 type TodayRow = {
   departure_date: string;
@@ -106,7 +106,7 @@ export async function getRouteHistory(
   env: StoreEnv,
   route: string,
   observed_date: string,
-  daysBack = 30,
+  daysBack = BASELINE_DAYS,
 ): Promise<HistoryPoint[]> {
   const since = subtractDays(observed_date, daysBack);
   const cacheKey = `history:${CACHE_VERSION}:${route}:${observed_date}:${daysBack}`;
@@ -144,10 +144,4 @@ export async function getRouteHistory(
 
   await env.CACHE.put(cacheKey, JSON.stringify(history), { expirationTtl: CACHE_TTL_SECONDS });
   return history;
-}
-
-function subtractDays(yyyymmdd: string, days: number): string {
-  const d = new Date(`${yyyymmdd}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() - days);
-  return d.toISOString().slice(0, 10);
 }

@@ -6,9 +6,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "seed:gen": "node scripts/seed.mjs",
-    "seed:local": "npm run seed:gen && wrangler d1 execute swimfare-db --local --file=scripts/seed.sql",
-    "seed:remote": "node scripts/seed-remote-confirm.mjs && npm run seed:gen && wrangler d1 execute swimfare-db --remote --file=scripts/seed.sql"
+    "db:pull": "wrangler d1 migrations apply swimfare-db --local && wrangler d1 export swimfare-db --remote --no-schema --table prices --output=scripts/local-data.sql && wrangler d1 execute swimfare-db --local --command=\"DELETE FROM prices\" && wrangler d1 execute swimfare-db --local --file=scripts/local-data.sql"
   },
   "dependencies": {
     "hono": "^4.6.0"

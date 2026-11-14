@@ -4,4 +4,4 @@ node_modules/
 .wrangler/
 .dev.vars
 dist/
-scripts/seed.sql
+scripts/local-data.sql

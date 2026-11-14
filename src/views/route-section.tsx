@@ -1,6 +1,6 @@
 import type { FC } from 'hono/jsx';
 import type { Departure, RoutePayload } from '../lib/store';
-import type { Judgment } from '../lib/judgment';
+import { STRONG_CHEAP_PCT, type Judgment } from '../lib/judgment';
 import { airlineLabel, routeLabel, STRINGS, type Locale, type Strings } from '../i18n/strings';
 
 function fmtDateLocal(yyyymmdd: string, t: Strings): string {
@@ -46,7 +46,7 @@ export const RouteSection: FC<{ data: RoutePayload; locale: Locale; linkTitle?: 
 }) => {
   const t = STRINGS[locale];
   const hasStrongCheap = data.departures.some(
-    (d) => d.judgment.verdict === 'cheap' && d.judgment.deviation_pct <= -10,
+    (d) => d.judgment.verdict === 'cheap' && d.judgment.deviation_pct <= STRONG_CHEAP_PCT,
   );
   return (
     <section class={`route-card${hasStrongCheap ? ' has-cheap' : ''}`}>
