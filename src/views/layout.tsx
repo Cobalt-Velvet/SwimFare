@@ -20,319 +20,363 @@ declare module 'hono' {
   }
 }
 
-const css = `
-:root {
-  --bg: #f8fafc;
+// 色はすべてインクのニュートラル＋海の青ひとつ。「水面より下＝割安」を色の意味に揃える。
+const LIGHT = `
+  --bg: #f5f7fa;
   --surface: #ffffff;
-  --surface-muted: #f8fafc;
-  --text: #0f172a;
-  --text-muted: #475569;
-  --text-faint: #64748b;
-  --border: #e2e8f0;
-  --border-dashed: #cbd5e1;
-  --link: #0284c7;
-  --header-bg: linear-gradient(135deg, #0ea5e9, #0284c7);
-  --header-text: #ffffff;
-  --toggle-bg: rgba(255,255,255,0.15);
-  --toggle-active-bg: rgba(255,255,255,0.95);
-  --toggle-active-text: #0f172a;
-  --toggle-border: rgba(255,255,255,0.3);
-  --badge-cheap-bg: #dcfce7;
-  --badge-cheap-fg: #166534;
-  --badge-normal-bg: #f1f5f9;
-  --badge-normal-fg: #475569;
-  --badge-expensive-bg: #fee2e2;
-  --badge-expensive-fg: #991b1b;
-  --badge-collecting-bg: #dbeafe;
-  --badge-collecting-fg: #1e40af;
-  --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --glow-bg: linear-gradient(135deg, #ffffff 0%, #fdf2f8 55%, #fce7f3 100%);
-  --glow-shadow: 0 0 22px rgba(236, 72, 153, 0.22), 0 1px 3px rgba(15, 23, 42, 0.06);
-  --ad-faint: #94a3b8;
-  --chart-line: #94a3b8;
-  --chart-grid: rgba(15, 23, 42, 0.08);
-  --chart-text: #475569;
-}
+  --raised: #eceff4;
+  --text: #111827;
+  --text-2: #4b5565;
+  --text-3: #6b7487;
+  --line: rgba(17, 24, 39, 0.09);
+  --line-strong: rgba(17, 24, 39, 0.16);
+  --accent: #0369a1;
+  --water: rgba(3, 105, 161, 0.10);
+  --water-deep: rgba(3, 105, 161, 0.18);
+  --negative: #c42b2b;
+  --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.05);
+`;
+const DARK = `
+  --bg: #0b0d14;
+  --surface: #11141c;
+  --raised: #1a1e28;
+  --text: #eef0f5;
+  --text-2: #a3a9b8;
+  --text-3: #7a8296;
+  --line: rgba(238, 240, 245, 0.08);
+  --line-strong: rgba(238, 240, 245, 0.14);
+  --accent: #5cb6e6;
+  --water: rgba(92, 182, 230, 0.10);
+  --water-deep: rgba(92, 182, 230, 0.20);
+  --negative: #e5484d;
+  --shadow-sm: none;
+`;
 
+const css = `
+:root { ${LIGHT} color-scheme: light; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #0f172a;
-    --surface: #1e293b;
-    --surface-muted: #172033;
-    --text: #f1f5f9;
-    --text-muted: #cbd5e1;
-    --text-faint: #94a3b8;
-    --border: #334155;
-    --border-dashed: #475569;
-    --link: #38bdf8;
-    --header-bg: linear-gradient(135deg, #075985, #0c4a6e);
-    --header-text: #f1f5f9;
-    --toggle-bg: rgba(255,255,255,0.08);
-    --toggle-active-bg: rgba(255,255,255,0.92);
-    --toggle-active-text: #0f172a;
-    --toggle-border: rgba(255,255,255,0.18);
-    --badge-cheap-bg: #14532d;
-    --badge-cheap-fg: #86efac;
-    --badge-normal-bg: #334155;
-    --badge-normal-fg: #cbd5e1;
-    --badge-expensive-bg: #7f1d1d;
-    --badge-expensive-fg: #fca5a5;
-    --badge-collecting-bg: #1e3a8a;
-    --badge-collecting-fg: #93c5fd;
-    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-    --glow-bg: linear-gradient(135deg, #1e293b 0%, #3b1f33 55%, #571438 100%);
-    --glow-shadow: 0 0 28px rgba(244, 114, 182, 0.4), 0 1px 3px rgba(0, 0, 0, 0.4);
-    --ad-faint: #475569;
-    --chart-line: #64748b;
-    --chart-grid: rgba(241, 245, 249, 0.08);
-    --chart-text: #cbd5e1;
-  }
+  :root:not([data-theme='light']) { ${DARK} color-scheme: dark; }
 }
-
-[data-theme='dark'] {
-  --bg: #0f172a;
-  --surface: #1e293b;
-  --surface-muted: #172033;
-  --text: #f1f5f9;
-  --text-muted: #cbd5e1;
-  --text-faint: #94a3b8;
-  --border: #334155;
-  --border-dashed: #475569;
-  --link: #38bdf8;
-  --header-bg: linear-gradient(135deg, #075985, #0c4a6e);
-  --header-text: #f1f5f9;
-  --toggle-bg: rgba(255,255,255,0.08);
-  --toggle-active-bg: rgba(255,255,255,0.92);
-  --toggle-active-text: #0f172a;
-  --toggle-border: rgba(255,255,255,0.18);
-  --badge-cheap-bg: #14532d;
-  --badge-cheap-fg: #86efac;
-  --badge-normal-bg: #334155;
-  --badge-normal-fg: #cbd5e1;
-  --badge-expensive-bg: #7f1d1d;
-  --badge-expensive-fg: #fca5a5;
-  --badge-collecting-bg: #1e3a8a;
-  --badge-collecting-fg: #93c5fd;
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --glow-bg: linear-gradient(135deg, #1e293b 0%, #3b1f33 55%, #571438 100%);
-  --glow-shadow: 0 0 28px rgba(244, 114, 182, 0.4), 0 1px 3px rgba(0, 0, 0, 0.4);
-  --ad-faint: #475569;
-  --chart-line: #64748b;
-  --chart-grid: rgba(241, 245, 249, 0.08);
-  --chart-text: #cbd5e1;
-}
+:root[data-theme='dark'] { ${DARK} color-scheme: dark; }
 
 * { box-sizing: border-box; }
 html, body { background: var(--bg); }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans KR", sans-serif;
   margin: 0;
   color: var(--text);
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.6;
+  font-family: "IBM Plex Sans JP", "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans KR", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+html[lang='ko'] body {
+  font-family: "IBM Plex Sans KR", "IBM Plex Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+html[lang='ko'] body { word-break: keep-all; overflow-wrap: anywhere; }
 a { color: inherit; }
+.mono, .num { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+.num { font-variant-numeric: tabular-nums; }
+.dep-price.num, .feature-price.num { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
-.site-header {
-  background: var(--header-bg);
-  color: var(--header-text);
-  padding: 1.5rem 1.25rem 1.1rem;
-  text-align: center;
-}
-.brand {
-  display: inline-block;
-  color: var(--header-text);
-  text-decoration: none;
-  font-size: 1.6rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-.catchphrase { margin: 0.4rem 0 0.9rem; opacity: 0.92; font-size: 0.95rem; }
+.container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 
-.toggles {
+/* ── Top bar ───────────────────────── */
+.topbar { border-bottom: 1px solid var(--line); }
+.topbar .container {
+  min-height: 56px;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem 1rem;
-  font-size: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
-.toggle-group {
+.brand {
   display: inline-flex;
-  background: var(--toggle-bg);
-  border: 1px solid var(--toggle-border);
-  border-radius: 999px;
-  padding: 2px;
-  align-items: stretch;
-}
-.toggle-group > a {
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
+  align-items: center;
+  gap: 8px;
   text-decoration: none;
-  color: var(--header-text);
-  opacity: 0.85;
-  line-height: 1.2;
-}
-.toggle-group > a:hover { opacity: 1; }
-.toggle-group > a.active {
-  background: var(--toggle-active-bg);
-  color: var(--toggle-active-text);
-  opacity: 1;
+  font-size: 17px;
   font-weight: 600;
+  line-height: 1;
+  color: var(--text);
 }
+.brand svg { color: var(--accent); }
+.prefs { display: flex; gap: 8px; }
 
-main { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem; }
-.lead { color: var(--text-muted); margin: 0 0 1rem; }
-.back-link { color: var(--link); text-decoration: none; font-size: 0.9rem; }
-.back-link:hover { text-decoration: underline; }
-
-.direction-toggle {
-  display: flex;
-  gap: 0.25rem;
-  margin: 0.5rem auto 1.25rem;
-  background: var(--surface);
-  border-radius: 999px;
-  padding: 5px;
-  box-shadow: var(--card-shadow);
-  width: fit-content;
+.seg {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  background: var(--raised);
+  border-radius: 8px;
 }
-.direction-toggle button {
+.seg > a, .seg > button {
   font: inherit;
-  font-size: 1rem;
-  border: none;
+  font-size: 13px;
+  line-height: 1;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
   background: transparent;
-  color: var(--text-muted);
-  padding: 0.6rem 1.4rem;
-  border-radius: 999px;
+  color: var(--text-2);
+  text-decoration: none;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background-color 150ms cubic-bezier(0.22, 1, 0.36, 1), color 150ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.direction-toggle button:hover { color: var(--text); }
-.direction-toggle button.active {
-  background: var(--link);
-  color: var(--header-text);
-  font-weight: 600;
+.seg > a:hover, .seg > button:hover { color: var(--text); }
+.seg > .active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: 0 0 0 1px var(--line), var(--shadow-sm);
 }
-@media (prefers-reduced-motion: reduce) {
-  .direction-toggle button { transition: none; }
+.seg.lg { padding: 4px; border-radius: 10px; gap: 4px; }
+.seg.lg > button { font-size: 15px; padding: 10px 20px; }
+
+main { padding-top: 32px; padding-bottom: 32px; }
+
+/* ── Hero ─────────────────────────── */
+.hero {
+  display: grid;
+  gap: 32px;
+  align-items: center;
+  padding: 24px 0 48px;
+}
+.hero.has-feature { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.hero h1 {
+  margin: 0;
+  font-size: 40px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  word-break: auto-phrase;
+  text-wrap: balance;
+}
+.hero .lead {
+  margin: 16px 0 32px;
+  max-width: 34rem;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--text-2);
 }
 
-.directions-wrap {
+/* 今日いちばん割安な便：水面＝過去30日の平均、価格の点はその下に沈む */
+.feature {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
-  /* スライドが上下の他要素と干渉しないように高さは中身で決まる */
 }
+.feature-head { padding: 20px 24px 0; }
+.feature-kicker { margin: 0; font-size: 13px; color: var(--text-3); }
+.feature-route { margin: 4px 0 0; font-size: 15px; font-weight: 500; }
+.feature-route a { text-decoration: none; }
+.feature-route a:hover { color: var(--accent); }
+.feature-price { margin: 16px 0 0; font-size: 40px; line-height: 1; font-weight: 500; }
+.feature-price .unit { font-size: 13px; color: var(--text-3); margin-left: 4px; font-weight: 400; }
+.feature-meta { margin: 8px 0 0; font-size: 13px; color: var(--text-2); }
+.gauge { position: relative; height: 128px; margin-top: 16px; }
+.gauge .water {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  top: 36px;
+  background: linear-gradient(var(--water-deep), var(--water) 70%);
+  border-top: 2px solid var(--accent);
+}
+.gauge .surface-label {
+  position: absolute;
+  left: 24px; top: 12px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.gauge .surface-label b { font-weight: 500; color: var(--text-2); }
+.gauge .plumb {
+  position: absolute;
+  left: 68%;
+  top: 37px;
+  width: 0;
+  border-left: 1px dashed var(--accent);
+}
+.gauge .dot {
+  position: absolute;
+  left: 68%;
+  width: 12px; height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 0 0 0 3px var(--surface);
+}
+.gauge .depth {
+  position: absolute;
+  left: calc(68% + 16px);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  transform: translateY(-50%);
+}
+
+/* ── Direction slide ─────────────────── */
+.directions-wrap { overflow: hidden; }
 .directions-track {
   display: flex;
   width: 200%;
-  transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.directions-wrap[data-direction="kr-to-jp"] .directions-track { transform: translateX(0%); }
-.directions-wrap[data-direction="jp-to-kr"] .directions-track { transform: translateX(-50%); }
-.direction-pane {
-  flex: 0 0 50%;
-  width: 50%;
-  min-width: 0;
-}
+.home[data-direction="kr-to-jp"] .directions-track { transform: translateX(0%); }
+.home[data-direction="jp-to-kr"] .directions-track { transform: translateX(-50%); }
+.home[data-direction="kr-to-jp"] [data-feature="jp-to-kr"],
+.home[data-direction="jp-to-kr"] [data-feature="kr-to-jp"] { display: none; }
+.direction-pane { flex: 0 0 50%; width: 50%; min-width: 0; }
 @media (prefers-reduced-motion: reduce) {
-  .directions-track { transition: none; }
+  .directions-track, .seg > a, .seg > button { transition: none; }
 }
 
+/* ── Legend ───────────────────────── */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+.legend .note { margin-right: auto; }
+.legend .verdict { margin-top: 0; font-weight: 400; }
+
+/* ── Route card ───────────────────── */
 .route-card {
   background: var(--surface);
-  border-radius: 12px;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
-  box-shadow: var(--card-shadow);
-  transition: box-shadow 0.3s ease;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
 }
-.route-card.has-cheap {
-  background: var(--glow-bg);
-  box-shadow: var(--glow-shadow);
+/* 平均より30%以上安い便を含む路線：「割安」と同じ海の青で枠線を引く */
+.route-card.has-cheap { border-color: var(--accent); }
+.route-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding: 20px 24px 16px;
 }
-.route-card h2 { margin: 0 0 0.25rem; font-size: 1.25rem; }
-.route-card h2 a { color: var(--link); text-decoration: none; }
-.route-card h2 a:hover { text-decoration: underline; }
-.route-card .observed { color: var(--text-faint); font-size: 0.8rem; margin: 0 0 1rem; }
+.route-head h2 { margin: 0; font-size: 18px; line-height: 1.4; font-weight: 500; }
+.route-head h2 a { text-decoration: none; }
+.route-head h2 a:hover { color: var(--accent); }
+.route-head .observed { margin: 0; font-size: 12px; color: var(--text-3); }
 
-.deps-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.75rem;
+.deps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.dep { padding: 16px 24px 20px; border-left: 1px solid var(--line); }
+.dep:nth-child(4n + 1) { border-left: 0; }
+.dep-date { font-size: 13px; color: var(--text-2); }
+.dep-price { margin-top: 8px; font-size: 24px; line-height: 1.2; font-weight: 500; }
+.dep-price .unit { font-size: 12px; font-weight: 400; color: var(--text-3); margin-left: 4px; }
+.dep-meta { margin-top: 4px; font-size: 12px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.verdict { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--text-2); }
+.verdict::before {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
 }
-.dep {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.75rem;
-  background: var(--surface-muted);
-}
-.dep-date { font-weight: 600; font-size: 0.9rem; color: var(--text-muted); }
-.dep-price { font-size: 1.4rem; font-weight: 700; margin: 0.25rem 0 0; color: var(--text); }
-.dep-price .unit { font-size: 0.8rem; font-weight: normal; color: var(--text-faint); margin-left: 0.2rem; }
-.dep-meta { font-size: 0.8rem; color: var(--text-faint); margin: 0.1rem 0 0.1rem; }
-.dep-airline { font-size: 0.78rem; color: var(--text-muted); margin: 0 0 0.5rem; }
+.verdict.cheap { color: var(--accent); font-weight: 500; }
+.verdict.expensive { color: var(--negative); }
+.verdict.normal { color: var(--text-2); }
+.verdict.collecting { color: var(--text-3); }
+.verdict.collecting::before { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
 
-.badge {
-  display: inline-block;
-  padding: 0.2rem 0.65rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 999px;
-}
-.badge.cheap     { background: var(--badge-cheap-bg);     color: var(--badge-cheap-fg); }
-.badge.normal    { background: var(--badge-normal-bg);    color: var(--badge-normal-fg); }
-.badge.expensive { background: var(--badge-expensive-bg); color: var(--badge-expensive-fg); }
-.badge.collecting{ background: var(--badge-collecting-bg);color: var(--badge-collecting-fg); }
+.empty-note { margin: 0; padding: 16px 24px 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--text-3); }
 
-.empty-note {
-  color: var(--text-faint);
-  font-style: italic;
-  margin: 0;
-}
-
+/* ── Route detail ─────────────────── */
+.back-link { display: inline-block; margin-bottom: 16px; font-size: 14px; color: var(--text-2); text-decoration: none; }
+.back-link:hover { color: var(--accent); }
 .chart-section {
   background: var(--surface);
-  padding: 1.25rem;
-  border-radius: 12px;
-  margin-top: 1.5rem;
-  box-shadow: var(--card-shadow);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+  margin-top: 24px;
 }
-.chart-section h2 { margin: 0 0 0.25rem; font-size: 1.1rem; }
-.chart-section p.help { color: var(--text-faint); font-size: 0.85rem; margin: 0 0 1rem; }
-.chart-wrap {
-  position: relative;
-  height: 360px;
-  width: 100%;
-}
+.chart-section h2 { margin: 0; font-size: 18px; font-weight: 500; }
+.chart-section .help { margin: 8px 0 20px; max-width: 44rem; font-size: 14px; color: var(--text-2); }
+.chart-section .empty-note { padding: 0; border: 0; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 12px; font-size: 13px; color: var(--text-2); }
+.chart-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.swatch-water { width: 20px; height: 10px; border-top: 2px solid var(--accent); background: var(--water-deep); }
+.swatch-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text); }
+.chart-legend .unit { margin-left: auto; color: var(--text-3); }
+.chart-wrap { position: relative; height: 360px; width: 100%; }
 
-.ad-slot {
-  max-width: 960px;
-  min-height: 90px;
-  margin: 1.5rem auto;
-  padding: 0 1.25rem;
-}
+/* ── Ad + footer ──────────────────── */
+.ad-slot { min-height: 90px; margin: 16px auto 32px; }
 .ad-slot-inner {
   height: 90px;
-  border: 1px dashed var(--border-dashed);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ad-faint);
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  color: var(--text-3);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 12px;
 }
-.site-footer {
-  max-width: 960px;
-  margin: 0 auto 2rem;
-  padding: 0 1.25rem;
-  color: var(--text-faint);
-  font-size: 0.8rem;
-  text-align: center;
+.site-footer { border-top: 1px solid var(--line); }
+.site-footer p { margin: 0; padding: 24px 0 40px; font-size: 13px; color: var(--text-3); }
+
+/* ── Small screens ────────────────── */
+@media (max-width: 880px) {
+  .hero.has-feature { grid-template-columns: minmax(0, 1fr); }
 }
-.site-footer p { margin: 0; }
+@media (max-width: 720px) {
+  .container { padding: 0 16px; }
+  main { padding-top: 16px; }
+  .hero { padding: 16px 0 32px; gap: 24px; }
+  .hero h1 { font-size: 28px; }
+  .hero .lead { font-size: 15px; margin: 12px 0 24px; }
+  .seg.lg { display: flex; }
+  .seg.lg > button { flex: 1; padding: 10px 12px; }
+  .route-head { padding: 16px 16px 12px; }
+  .deps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dep { padding: 12px 16px 16px; }
+  .dep:nth-child(4n + 1) { border-left: 1px solid var(--line); }
+  .dep:nth-child(2n + 1) { border-left: 0; }
+  .dep:nth-child(n + 3) { border-top: 1px solid var(--line); }
+  .dep-price { font-size: 20px; }
+  .feature-head { padding: 16px 16px 0; }
+  .gauge .surface-label { left: 16px; }
+  .chart-section { padding: 16px; }
+  .chart-wrap { height: 280px; }
+}
 `;
+
+const FONT_FAMILIES: Record<Locale, string> = {
+  ja: 'IBM+Plex+Sans+JP:wght@400;500;600',
+  ko: 'IBM+Plex+Sans+KR:wght@400;500;600',
+};
 
 function withParam(path: string, key: string, value: string): string {
   return `${path}?${key}=${encodeURIComponent(value)}`;
 }
+
+// 水面の波ひとつ。ロゴのマーク。
+const Mark = () => (
+  <svg width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
+    <path
+      d="M1 9c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3 2.5 3 3 3"
+      stroke="currentColor"
+      stroke-width="1.75"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+);
 
 export const Layout = jsxRenderer(({ children, title, loadChart, ads, locale, theme, path }) => {
   const t = STRINGS[locale];
@@ -343,6 +387,12 @@ export const Layout = jsxRenderer(({ children, title, loadChart, ads, locale, th
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{title ?? 'SwimFare'}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href={`https://fonts.googleapis.com/css2?family=${FONT_FAMILIES[locale]}&family=IBM+Plex+Mono:wght@400;500&display=swap`}
+        />
         <style>{raw(css)}</style>
         {ads ? (
           <script
@@ -353,33 +403,37 @@ export const Layout = jsxRenderer(({ children, title, loadChart, ads, locale, th
         ) : null}
       </head>
       <body>
-        <header class="site-header">
-          <a href="/" class="brand">SwimFare</a>
-          <p class="catchphrase">{t.catchphrase}</p>
-          <div class="toggles">
-            <span class="toggle-group" role="group" aria-label={t.langLabel}>
-              <a href={withParam(path, 'lang', 'ja')} class={`toggle${locale === 'ja' ? ' active' : ''}`}>
-                日本語
-              </a>
-              <a href={withParam(path, 'lang', 'ko')} class={`toggle${locale === 'ko' ? ' active' : ''}`}>
-                한국어
-              </a>
-            </span>
-            <span class="toggle-group" role="group" aria-label={t.themeLabel}>
-              <a href={withParam(path, 'theme', 'light')} class={`toggle${theme === 'light' ? ' active' : ''}`}>
-                {t.themeLight}
-              </a>
-              <a href={withParam(path, 'theme', 'dark')} class={`toggle${theme === 'dark' ? ' active' : ''}`}>
-                {t.themeDark}
-              </a>
-              <a href={withParam(path, 'theme', 'auto')} class={`toggle${theme === null ? ' active' : ''}`}>
-                {t.themeAuto}
-              </a>
-            </span>
+        <header class="topbar">
+          <div class="container">
+            <a href="/" class="brand">
+              <Mark />
+              SwimFare
+            </a>
+            <div class="prefs">
+              <span class="seg" role="group" aria-label={t.langLabel}>
+                <a href={withParam(path, 'lang', 'ja')} class={locale === 'ja' ? 'active' : ''}>
+                  日本語
+                </a>
+                <a href={withParam(path, 'lang', 'ko')} class={locale === 'ko' ? 'active' : ''}>
+                  한국어
+                </a>
+              </span>
+              <span class="seg" role="group" aria-label={t.themeLabel}>
+                <a href={withParam(path, 'theme', 'light')} class={theme === 'light' ? 'active' : ''}>
+                  {t.themeLight}
+                </a>
+                <a href={withParam(path, 'theme', 'dark')} class={theme === 'dark' ? 'active' : ''}>
+                  {t.themeDark}
+                </a>
+                <a href={withParam(path, 'theme', 'auto')} class={theme === null ? 'active' : ''}>
+                  {t.themeAuto}
+                </a>
+              </span>
+            </div>
           </div>
         </header>
-        <main>{children}</main>
-        <aside class="ad-slot" aria-label="ads">
+        <main class="container">{children}</main>
+        <aside class="ad-slot container" aria-label="ads">
           {ads ? (
             <>
               <ins
@@ -397,7 +451,9 @@ export const Layout = jsxRenderer(({ children, title, loadChart, ads, locale, th
           )}
         </aside>
         <footer class="site-footer">
-          <p>{t.footer}</p>
+          <div class="container">
+            <p>{t.footer}</p>
+          </div>
         </footer>
         {loadChart ? (
           <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>

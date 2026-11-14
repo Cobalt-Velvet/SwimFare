@@ -3,41 +3,50 @@ import type { Departure, RoutePayload } from '../lib/store';
 import { STRONG_CHEAP_PCT, type Judgment } from '../lib/judgment';
 import { airlineLabel, routeLabel, STRINGS, type Locale, type Strings } from '../i18n/strings';
 
-function fmtDateLocal(yyyymmdd: string, t: Strings): string {
+export function fmtDateLocal(yyyymmdd: string, t: Strings): string {
   const d = new Date(`${yyyymmdd}T00:00:00Z`);
   return `${d.getUTCMonth() + 1}/${d.getUTCDate()} (${t.weekDay[d.getUTCDay()]})`;
 }
 
-const Badge: FC<{ j: Judgment; t: Strings }> = ({ j, t }) => {
+// 乖離率は常に小数1桁、マイナスは U+2212。
+export function fmtPct(pct: number): string {
+  const sign = pct > 0 ? '+' : pct < 0 ? '−' : '±';
+  return `${sign}${Math.abs(pct).toFixed(1)}%`;
+}
+
+const Verdict: FC<{ j: Judgment; t: Strings }> = ({ j, t }) => {
   if (j.verdict === 'insufficient_data') {
-    return <span class="badge collecting">{t.badge.collecting(j.sample_count, j.required)}</span>;
+    return <span class="verdict collecting">{t.badge.collecting(j.sample_count, j.required)}</span>;
   }
   const label =
     j.verdict === 'cheap' ? t.badge.cheap : j.verdict === 'expensive' ? t.badge.expensive : t.badge.normal;
-  const sign = j.deviation_pct > 0 ? '+' : '';
   return (
-    <span class={`badge ${j.verdict}`}>
-      {label} {sign}
-      {j.deviation_pct}%
+    <span class={`verdict ${j.verdict}`}>
+      {label} <span class="num">{fmtPct(j.deviation_pct)}</span>
     </span>
   );
 };
 
-const DepartureCard: FC<{ d: Departure; t: Strings }> = ({ d, t }) => (
-  <article class="dep">
-    <div class="dep-date">
-      {fmtDateLocal(d.departure_date, t)}
-      {t.departureSuffix}
-    </div>
-    <div class="dep-price">
-      {d.price.toLocaleString()}
-      <span class="unit">{d.currency}</span>
-    </div>
-    <div class="dep-meta">{t.daysBefore(d.days_before)}</div>
-    {d.airline ? <div class="dep-airline">{airlineLabel(d.airline, t)}</div> : null}
-    <Badge j={d.judgment} t={t} />
-  </article>
-);
+const DepartureCell: FC<{ d: Departure; t: Strings }> = ({ d, t }) => {
+  const airline = airlineLabel(d.airline, t);
+  return (
+    <article class="dep">
+      <div class="dep-date">
+        {fmtDateLocal(d.departure_date, t)}
+        {t.departureSuffix}
+      </div>
+      <div class="dep-price num">
+        {d.price.toLocaleString()}
+        <span class="unit">{d.currency}</span>
+      </div>
+      <div class="dep-meta" title={airline || undefined}>
+        {t.daysBefore(d.days_before)}
+        {airline ? ` · ${airline}` : ''}
+      </div>
+      <Verdict j={d.judgment} t={t} />
+    </article>
+  );
+};
 
 export const RouteSection: FC<{ data: RoutePayload; locale: Locale; linkTitle?: boolean }> = ({
   data,
@@ -50,22 +59,24 @@ export const RouteSection: FC<{ data: RoutePayload; locale: Locale; linkTitle?: 
   );
   return (
     <section class={`route-card${hasStrongCheap ? ' has-cheap' : ''}`}>
-      <h2>
-        {linkTitle ? (
-          <a href={`/routes/${data.route}`}>{routeLabel(data.route, t)}</a>
-        ) : (
-          routeLabel(data.route, t)
-        )}
-      </h2>
-      <p class="observed">
-        {data.route} ・ {t.observed}: {data.observed_date}
-      </p>
+      <div class="route-head">
+        <h2>
+          {linkTitle ? (
+            <a href={`/routes/${data.route}`}>{routeLabel(data.route, t)}</a>
+          ) : (
+            routeLabel(data.route, t)
+          )}
+        </h2>
+        <p class="observed">
+          {t.observed} <span class="num">{data.observed_date}</span>
+        </p>
+      </div>
       {data.departures.length === 0 ? (
         <p class="empty-note">{t.emptyRoute}</p>
       ) : (
-        <div class="deps-grid">
+        <div class="deps">
           {data.departures.map((d) => (
-            <DepartureCard d={d} t={t} />
+            <DepartureCell d={d} t={t} />
           ))}
         </div>
       )}

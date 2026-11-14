@@ -4,7 +4,7 @@ import type { RoutePayload, HistoryPoint } from '../lib/store';
 import { RouteSection } from './route-section';
 import { STRINGS, type Locale } from '../i18n/strings';
 
-type TodayPoint = { x: number; y: number; verdict: string };
+type TodayPoint = { x: number; y: number };
 
 export const RouteDetail: FC<{
   data: RoutePayload;
@@ -12,30 +12,38 @@ export const RouteDetail: FC<{
   locale: Locale;
 }> = ({ data, history, locale }) => {
   const t = STRINGS[locale];
-  const today: TodayPoint[] = data.departures.map((d) => ({
-    x: d.days_before,
-    y: d.price,
-    verdict: d.judgment.verdict,
-  }));
+  const today: TodayPoint[] = data.departures.map((d) => ({ x: d.days_before, y: d.price }));
   const avg = history.map((h) => ({ x: h.days_before, y: h.avg_price }));
   const chartReady = avg.length > 0 && today.length > 0;
+  const currency = data.departures[0]?.currency ?? 'JPY';
 
   return (
     <>
-      <p>
-        <a href="/" class="back-link">
-          {t.backLink}
-        </a>
-      </p>
+      <a href="/" class="back-link">
+        {t.backLink}
+      </a>
       <RouteSection data={data} locale={locale} />
 
       <section class="chart-section">
         <h2>{t.chartTitle}</h2>
         <p class="help">{t.chartHelp}</p>
         {chartReady ? (
-          <div class="chart-wrap">
-            <canvas id="price-chart"></canvas>
-          </div>
+          <>
+            <div class="chart-legend">
+              <span>
+                <i class="swatch-water"></i>
+                {t.chartLegendAvg}
+              </span>
+              <span>
+                <i class="swatch-dot"></i>
+                {t.chartLegendToday}
+              </span>
+              <span class="unit mono">{currency}</span>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="price-chart" aria-label={t.chartTitle} role="img"></canvas>
+            </div>
+          </>
         ) : (
           <p class="empty-note">{t.chartEmpty}</p>
         )}
@@ -51,64 +59,100 @@ export const RouteDetail: FC<{
                 avg: ${JSON.stringify(t.chartLegendAvg)},
                 today: ${JSON.stringify(t.chartLegendToday)},
                 x: ${JSON.stringify(t.chartXLabel)},
-                y: ${JSON.stringify(t.chartYLabel)},
               };
-              const color = {
-                cheap: '#22c55e',
-                normal: '#6b7280',
-                expensive: '#ef4444',
-                insufficient_data: '#3b82f6',
-              };
+              let chart = null;
+              function token(style, name, fallback) {
+                return style.getPropertyValue(name).trim() || fallback;
+              }
               function render() {
                 const ctx = document.getElementById('price-chart');
                 if (!ctx || typeof Chart === 'undefined') return;
-                const style = getComputedStyle(document.documentElement);
-                const chartLine = style.getPropertyValue('--chart-line').trim() || '#94a3b8';
-                const chartGrid = style.getPropertyValue('--chart-grid').trim() || 'rgba(15,23,42,0.08)';
-                const chartText = style.getPropertyValue('--chart-text').trim() || '#475569';
-                Chart.defaults.color = chartText;
-                Chart.defaults.borderColor = chartGrid;
-                new Chart(ctx, {
+                const s = getComputedStyle(document.documentElement);
+                const accent = token(s, '--accent', '#0369a1');
+                const water = token(s, '--water', 'rgba(3,105,161,0.1)');
+                const text = token(s, '--text', '#111827');
+                const muted = token(s, '--text-3', '#6b7487');
+                const line = token(s, '--line', 'rgba(17,24,39,0.09)');
+                const surface = token(s, '--surface', '#ffffff');
+                const mono = '"IBM Plex Mono", ui-monospace, monospace';
+                if (chart) chart.destroy();
+                chart = new Chart(ctx, {
                   type: 'scatter',
                   data: {
                     datasets: [
                       {
+                        label: labels.today,
+                        data: today,
+                        backgroundColor: text,
+                        borderColor: surface,
+                        borderWidth: 3,
+                        pointRadius: 7,
+                        pointHoverRadius: 8,
+                        order: 0,
+                      },
+                      {
                         label: labels.avg,
                         data: avg,
                         showLine: true,
-                        borderColor: chartLine,
-                        backgroundColor: chartLine,
-                        pointRadius: 4,
-                        tension: 0.2,
-                      },
-                      {
-                        label: labels.today,
-                        data: today.map(function (p) { return { x: p.x, y: p.y }; }),
-                        backgroundColor: today.map(function (p) { return color[p.verdict] || '#0ea5e9'; }),
-                        borderColor: today.map(function (p) { return color[p.verdict] || '#0ea5e9'; }),
-                        pointRadius: 8,
-                        pointHoverRadius: 10,
+                        borderColor: accent,
+                        borderWidth: 2,
+                        backgroundColor: water,
+                        fill: 'start',
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        pointHoverBackgroundColor: accent,
+                        cubicInterpolationMode: 'monotone',
+                        order: 1,
                       },
                     ],
                   },
                   options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: { duration: 300 },
+                    interaction: { mode: 'nearest', intersect: false },
                     scales: {
                       x: {
-                        title: { display: true, text: labels.x },
                         reverse: true,
-                        grid: { color: chartGrid },
+                        title: { display: true, text: labels.x, color: muted, font: { size: 12 } },
+                        grid: { color: line, drawTicks: false },
+                        border: { display: false },
+                        ticks: { color: muted, padding: 8, font: { family: mono, size: 11 } },
                       },
                       y: {
-                        title: { display: true, text: labels.y },
+                        grace: '10%',
+                        grid: { color: line, drawTicks: false },
+                        border: { display: false },
                         ticks: {
+                          color: muted,
+                          padding: 8,
+                          maxTicksLimit: 6,
+                          font: { family: mono, size: 11 },
                           callback: function (v) { return v.toLocaleString(); },
                         },
-                        grid: { color: chartGrid },
                       },
                     },
-                    plugins: { legend: { position: 'top' } },
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                        backgroundColor: surface,
+                        titleColor: muted,
+                        bodyColor: text,
+                        borderColor: line,
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        padding: 10,
+                        displayColors: false,
+                        bodyFont: { family: mono, size: 12 },
+                        titleFont: { size: 12, weight: 'normal' },
+                        callbacks: {
+                          title: function (items) { return items[0] ? items[0].dataset.label : ''; },
+                          label: function (item) {
+                            return item.parsed.x + 'd · ' + item.parsed.y.toLocaleString();
+                          },
+                        },
+                      },
+                    },
                   },
                 });
               }
@@ -117,6 +161,9 @@ export const RouteDetail: FC<{
               } else {
                 render();
               }
+              try {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+              } catch (e) {}
             })();
           `)}
         </script>

@@ -24,6 +24,12 @@ export type Strings = {
   chartEmpty: string;
   adPlaceholder: string;
   footer: string;
+  featureTitle: string;
+  featureAvg: string;
+  legendNote: string;
+  legendCheap: string;
+  legendNormal: string;
+  legendExpensive: string;
   weekDay: readonly [string, string, string, string, string, string, string];
   airports: Record<string, { city: string; name: string }>;
   airlines: Record<string, string>;
@@ -62,7 +68,13 @@ export const STRINGS: Record<Locale, Strings> = {
     chartXLabel: '出発までの残り日数',
     chartYLabel: '価格 (JPY)',
     chartEmpty: 'グラフ用のデータがまだ十分にありません。観測の蓄積をお待ちください。',
-    adPlaceholder: '広告枠（AdSense 連携準備済み）',
+    adPlaceholder: '広告',
+    featureTitle: '今日いちばん割安な便',
+    featureAvg: '過去30日の平均',
+    legendNote: '残り日数が近い便の、過去30日の平均との差',
+    legendCheap: '割安 −10% 以下',
+    legendNormal: '通常',
+    legendExpensive: '割高 +10% 以上',
     footer: 'データは Travelpayouts のキャッシュ由来で、実価格と一致しない場合があります。',
     weekDay: ['日', '月', '火', '水', '木', '金', '土'] as const,
     airports: {
@@ -124,7 +136,13 @@ export const STRINGS: Record<Locale, Strings> = {
     chartXLabel: '출발까지 남은 일수',
     chartYLabel: '가격 (JPY)',
     chartEmpty: '그래프를 그리기에 충분한 데이터가 아직 없습니다. 관측 누적을 기다려 주세요.',
-    adPlaceholder: '광고 영역 (AdSense 연동 준비됨)',
+    adPlaceholder: '광고',
+    featureTitle: '오늘 가장 저렴한 항공편',
+    featureAvg: '지난 30일 평균',
+    legendNote: '남은 일수가 비슷한 항공편의 지난 30일 평균 대비',
+    legendCheap: '저렴 −10% 이하',
+    legendNormal: '평균',
+    legendExpensive: '비쌈 +10% 이상',
     footer: '데이터는 Travelpayouts 캐시 기반이라 실제 시장 가격과 다를 수 있습니다.',
     weekDay: ['일', '월', '화', '수', '목', '금', '토'] as const,
     airports: {

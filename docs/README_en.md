@@ -21,8 +21,9 @@ SwimFare aligns the comparison on **days remaining**. By collecting prices obser
 - Automatically collects weekend flights for 6 major Korea–Japan routes every day
 - Stores data as a time series of "route, days-before, price"
 - Compares today's price against the average of the last 30 days of prices for the same route within ±3 days of the same days-before to judge cheap / expensive
-- Highlights routes containing a clearly cheap flight (30%+ below average) with a pink gradient
-- Price trend charts
+- Shows the flight furthest below its 30-day average as "today's cheapest flight" for each direction, drawn with the average as a waterline
+- Highlights routes containing a clearly cheap flight (30%+ below average) with a blue card border
+- Price trend charts (the 30-day average drawn as a waterline, today's prices as dots)
 - Japanese / Korean switching (automatic browser-language detection + manual toggle)
 - Light / dark theme switching (automatic system detection + manual toggle)
 - Korea-origin / Japan-origin direction switching (toggle with slide animation)

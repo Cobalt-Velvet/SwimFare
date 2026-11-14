@@ -7,7 +7,7 @@ export const MIN_SAMPLES = 5;
 // ほぼ全てが割安か割高になる。±10% で 割安 31% / 通常 31% / 割高 38%。
 export const CHEAP_THRESHOLD = -0.1;
 export const EXPENSIVE_THRESHOLD = 0.1;
-// ホームで路線カードを強調（glow）する「明確に安い便」の乖離率（%）。
+// ホームで路線カードを強調（青い枠線）する「明確に安い便」の乖離率（%）。
 // 同じ60日で、該当便を含む路線は1日平均 -10% で 7.3 / -20% で 4.4 / -30% で 3.0（約11路線中）。
 // 強調が大半の路線に付くと意味が無いので -30% にする。
 export const STRONG_CHEAP_PCT = -30;
