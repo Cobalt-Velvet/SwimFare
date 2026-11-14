@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { setCookie, deleteCookie } from 'hono/cookie';
 import { collectPrices } from './lib/collector';
-import { getRoutePayload, getRouteHistory } from './lib/store';
+import { getRoutePayload, getRouteHistory, latestObservedDate } from './lib/store';
 import {
   KOREA_TO_JAPAN,
   JAPAN_TO_KOREA,
@@ -78,9 +78,10 @@ app.get('/', async (c) => {
   const locale = c.get('locale');
   const theme = c.get('theme');
   const direction = c.get('direction');
+  const observedDate = await latestObservedDate(c.env.DB);
   const [krRoutes, jpRoutes] = await Promise.all([
-    Promise.all(KOREA_TO_JAPAN.map((r) => getRoutePayload(c.env, r))),
-    Promise.all(JAPAN_TO_KOREA.map((r) => getRoutePayload(c.env, r))),
+    Promise.all(KOREA_TO_JAPAN.map((r) => getRoutePayload(c.env, r, observedDate))),
+    Promise.all(JAPAN_TO_KOREA.map((r) => getRoutePayload(c.env, r, observedDate))),
   ]);
   return c.render(
     <Home krRoutes={krRoutes} jpRoutes={jpRoutes} locale={locale} direction={direction} />,
@@ -103,9 +104,10 @@ app.get('/routes/:route', async (c) => {
   // ルートのプレフィックスから方向を推定し、cookie を更新。
   // → 戻ったときホームが同じ方向で開く。
   setCookie(c, 'direction', routeDirection(route), COOKIE_OPTS);
+  const observedDate = await latestObservedDate(c.env.DB);
   const [data, history] = await Promise.all([
-    getRoutePayload(c.env, route),
-    getRouteHistory(c.env, route),
+    getRoutePayload(c.env, route, observedDate),
+    getRouteHistory(c.env, route, observedDate),
   ]);
   return c.render(<RouteDetail data={data} history={history} locale={locale} />, {
     title: `${route} | SwimFare`,
@@ -122,13 +124,13 @@ app.get('/healthz', (c) => c.json({ ok: true }));
 app.get('/api/routes/:route', async (c) => {
   const route = c.req.param('route');
   if (!isTrackedRoute(route)) return c.notFound();
-  return c.json(await getRoutePayload(c.env, route));
+  return c.json(await getRoutePayload(c.env, route, await latestObservedDate(c.env.DB)));
 });
 
 app.get('/api/routes/:route/history', async (c) => {
   const route = c.req.param('route');
   if (!isTrackedRoute(route)) return c.notFound();
-  return c.json(await getRouteHistory(c.env, route));
+  return c.json(await getRouteHistory(c.env, route, await latestObservedDate(c.env.DB)));
 });
 
 export default {

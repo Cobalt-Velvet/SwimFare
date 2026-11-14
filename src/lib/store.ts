@@ -35,8 +35,33 @@ type TodayRow = {
   airline: string | null;
 };
 
-export async function getRoutePayload(env: StoreEnv, route: string): Promise<RoutePayload> {
-  const observed_date = todayUtc();
+/**
+ * 画面の基準日 = DB に入っている最新の observed_date。
+ * 壁時計の UTC 日付を使うと、日付が変わる時刻（JST/KST 09:00）から cron が走る時刻（12:00）
+ * までは「今日」の行が無く、全路線が空になる。最新の観測日を使えば、その時間帯も
+ * cron が失敗した日も、直近のデータを表示できる。
+ * 路線別ではなく全体の MAX を取る：データの薄い路線で古い価格を最新として見せないため。
+ */
+export async function latestObservedDate(db: D1Database): Promise<string> {
+  try {
+    const row = await db
+      .prepare(`SELECT MAX(observed_date) AS latest FROM prices`)
+      .first<{ latest: string | null }>();
+    if (row?.latest) return row.latest;
+  } catch (e) {
+    console.warn(
+      `[store] latestObservedDate D1 read failed: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+  // テーブルが空、または D1 が落ちている場合。後続のクエリが空/失敗として処理する。
+  return todayUtc();
+}
+
+export async function getRoutePayload(
+  env: StoreEnv,
+  route: string,
+  observed_date: string,
+): Promise<RoutePayload> {
   const cacheKey = `route:${CACHE_VERSION}:${route}:${observed_date}`;
 
   const cached = await env.CACHE.get(cacheKey);
@@ -70,16 +95,19 @@ export async function getRoutePayload(env: StoreEnv, route: string): Promise<Rou
   );
 
   const payload: RoutePayload = { route, observed_date, departures };
-  await env.CACHE.put(cacheKey, JSON.stringify(payload), { expirationTtl: CACHE_TTL_SECONDS });
+  // 空の結果はキャッシュしない。データが入った直後に空表示が最大1時間残るのを防ぐ。
+  if (departures.length > 0) {
+    await env.CACHE.put(cacheKey, JSON.stringify(payload), { expirationTtl: CACHE_TTL_SECONDS });
+  }
   return payload;
 }
 
 export async function getRouteHistory(
   env: StoreEnv,
   route: string,
+  observed_date: string,
   daysBack = 30,
 ): Promise<HistoryPoint[]> {
-  const observed_date = todayUtc();
   const since = subtractDays(observed_date, daysBack);
   const cacheKey = `history:${CACHE_VERSION}:${route}:${observed_date}:${daysBack}`;
 
